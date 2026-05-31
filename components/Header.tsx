@@ -86,7 +86,7 @@ function HeaderInner() {
                   {sessionUser?.image ? (
                     <img src={sessionUser.image} alt={sessionUser.name || "User"} style={{ width: 32, height: 32, border: "2px solid var(--border-default)" }} />
                   ) : (
-                    <div style={{ width: 32, height: 32, background: "var(--accent-red)", display: "flex", alignItems: "center", justifyOrigin: "center", justifyContent: "center", fontSize: 13, fontWeight: 900, color: "var(--accent-cream)", border: "2px solid var(--border-default)" }}>
+                    <div style={{ width: 32, height: 32, background: "var(--accent-red)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 900, color: "var(--accent-cream)", border: "2px solid var(--border-default)" }}>
                       {userInitial}
                     </div>
                   )}
