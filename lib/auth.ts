@@ -97,17 +97,18 @@ export const authOptions: AuthOptions = {
   ],
 
   callbacks: {
-    // ── jwt: enrich token on first sign-in ─────────────────────────
+    // ── jwt: enrich token on first sign-in and subsequent validations ──
     async jwt({ token, user }) {
-      if (user) {
-        // Fetch full user from DB so we always get custom fields (role, shop)
-        // regardless of which provider was used.
+      const userId = token.id || user?.id;
+      if (userId) {
+        // Fetch full user from DB so we always get the latest custom fields (role, shop)
+        // dynamically on every token validation, rather than only on first sign-in.
         const dbUser = await prisma.user.findUnique({
-          where: { id: user.id },
+          where: { id: userId },
           include: { shop: { select: { id: true, status: true } } },
         });
 
-        token.id         = user.id;
+        token.id         = userId;
         token.role       = dbUser?.role       ?? "USER";
         token.shopId     = dbUser?.shop?.id   ?? null;
         token.shopStatus = dbUser?.shop?.status ?? null;

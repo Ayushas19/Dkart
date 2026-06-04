@@ -29,6 +29,12 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   if (user.role !== "USER")
     return NextResponse.json({ error: "Only customers can leave reviews" }, { status: 403 });
 
+  // Verify user exists in DB
+  const dbUser = await prisma.user.findUnique({ where: { id: user.id } });
+  if (!dbUser) {
+    return NextResponse.json({ error: "User not found. Please log in again." }, { status: 401 });
+  }
+
   const { rating, comment } = await req.json();
   if (!rating || rating < 1 || rating > 5)
     return NextResponse.json({ error: "Rating must be 1–5" }, { status: 400 });

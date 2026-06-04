@@ -25,6 +25,18 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
+    // Verify user exists in DB
+    const dbUser = await prisma.user.findUnique({ where: { id: user.id } });
+    if (!dbUser) {
+      return NextResponse.json({ error: "User not found. Please log in again." }, { status: 401 });
+    }
+
+    // Verify shop exists in DB
+    const dbShop = await prisma.shop.findUnique({ where: { id: shopId } });
+    if (!dbShop) {
+      return NextResponse.json({ error: "Shop not found" }, { status: 404 });
+    }
+
     const order = await prisma.order.create({
       data: {
         userId:          user.id,

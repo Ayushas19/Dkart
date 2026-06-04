@@ -2,10 +2,15 @@
 
 import LinkNext from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState, Suspense } from "react";
-import { User, MapPin, Menu, X, ShoppingCart, Sun, Moon, Crown } from "lucide-react";
+import { useState, useEffect, Suspense } from "react";
+import { 
+  User, MapPin, Menu, X, ShoppingCart, Bell, Search, Mic, 
+  Home, ShoppingBag, Folder, Heart, Tag, Gift, Settings, 
+  PhoneCall, HelpCircle, LogOut, ChevronDown, Check,
+  Truck, Store, Flame
+} from "lucide-react";
+import { useSession, signOut } from "next-auth/react";
 import { useTheme } from "./ThemeContext";
-import { useSession } from "next-auth/react";
 
 export default function Header() {
   return (
@@ -17,299 +22,374 @@ export default function Header() {
 
 function HeaderSkeleton() {
   return (
-    <header className="site-header">
-      <div className="header-inner">
-        <div style={{ width: 150, height: 38, background: '#222', border: '2px solid #ffffe3', borderRadius: 4 }} />
-      </div>
-    </header>
+    <header style={{ height: "70px", background: "#FFFFFF", borderBottom: "1px solid #E2E8F0" }} />
   );
 }
 
 function HeaderInner() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const router = useRouter();
   const searchParams = useSearchParams();
-  const loc = searchParams?.get("loc") || "all";
-  const { theme, toggleTheme } = useTheme();
-  const isDark = theme === "dark";
+  const currentLoc = searchParams?.get("loc") || "Patna";
   const { data: session } = useSession();
   const sessionUser = session?.user as any;
-  const userInitial = sessionUser?.name?.charAt(0)?.toUpperCase() || "U";
+  const userName = sessionUser?.name || "Ankit";
 
-  const handleLocationChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newLoc = e.target.value;
-    if (newLoc === "all") {
+  const handleLocationChange = (locName: string) => {
+    if (locName === "all") {
       router.push("/");
     } else {
-      router.push(`/?loc=${newLoc}`);
+      router.push(`/?loc=${locName}`);
     }
   };
 
-  const navLinks = [
-    { href: "/", label: "Collections" },
-    { href: "/category/clothes", label: "Drops", hasCrown: true },
-    { href: "/#about", label: "About" },
-    { href: "/#journal", label: "Journal" },
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      router.push(`/shop?search=${encodeURIComponent(searchQuery)}`);
+    }
+  };
+
+  const categories = [
+    { name: "Clothing", href: "/category/Clothing" },
+    { name: "Sweet", href: "/category/Sweets" },
+    { name: "Cake", href: "/category/Cake" },
+    { name: "Restaurant", href: "/category/Restaurant" },
+    { name: "Cosmetics", href: "/category/Cosmetics" },
+    { name: "Hotels", href: "/category/Hotels" },
+    { name: "Pharmacy", href: "/category/Pharmacy" },
   ];
 
   return (
     <>
-      <header className="site-header">
-        <div className="header-inner">
-          {/* Logo */}
-          <LinkNext href="/" className="header-logo" aria-label="District Kart Home" style={{ fontSize: "20px", letterSpacing: "-1px" }}>
-            <span>DISTRICT</span> KART
-          </LinkNext>
-
-          {/* Desktop Nav */}
-          <nav className="header-nav desktop-nav">
-            {navLinks.map((link) => (
-              <div key={link.href} className="nav-link-container">
-                <LinkNext href={link.href} className="header-nav-link">
-                  {link.label}
-                </LinkNext>
-                {link.hasCrown && (
-                  <div className="crown-badge">
-                    <Crown size={12} fill="var(--accent-red)" stroke="var(--accent-red)" />
-                  </div>
-                )}
-              </div>
-            ))}
-          </nav>
-
-          {/* Right-side controls */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            {/* Desktop Actions */}
-            <div className="desktop-actions header-actions">
-              {session ? (
-                <LinkNext href="/dashboard" className="header-action-item" title="My Account" style={{ padding: "4px", borderRadius: "4px" }}>
-                  {sessionUser?.image ? (
-                    <img src={sessionUser.image} alt={sessionUser.name || "User"} style={{ width: 32, height: 32, border: "2px solid var(--border-default)" }} />
-                  ) : (
-                    <div style={{ width: 32, height: 32, background: "var(--accent-red)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 900, color: "var(--accent-cream)", border: "2px solid var(--border-default)" }}>
-                      {userInitial}
-                    </div>
-                  )}
-                </LinkNext>
-              ) : (
-                <LinkNext href="/auth/login" className="header-action-item">
-                  <User size={16} />
-                  <span>Login</span>
-                </LinkNext>
-              )}
-
-              <LinkNext href="/cart" className="header-action-item" aria-label="View Cart">
-                <ShoppingCart size={16} />
-                <span>Cart</span>
-              </LinkNext>
-
-              <LinkNext href="/vendor/login" className="header-cta">
-                Open Shop
-              </LinkNext>
-            </div>
-
-            {/* Theme toggle — always visible */}
-            <button
-              className="theme-toggle-btn"
-              onClick={toggleTheme}
-              aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                width: 38,
-                height: 38,
-                border: "2px solid var(--border-default)",
-                background: "var(--bg-secondary)",
-                color: "var(--text-primary)",
-                boxShadow: "2px 2px 0px var(--border-default)",
-                cursor: "pointer",
-                transition: "all 0.2s"
-              }}
-            >
-              {isDark ? <Sun size={16} /> : <Moon size={16} />}
-            </button>
-
-            {/* Hamburger — mobile only */}
-            <button
-              className="mobile-toggle nav-mobile-toggle"
-              onClick={() => setIsMenuOpen(true)}
-              aria-label="Open menu"
-            >
-              <div className="hamburger-bars">
-                <span className="hamburger-bar bar-1"></span>
-                <span className="hamburger-bar bar-2"></span>
-              </div>
-            </button>
-          </div>
+      {/* 1. TOP ANNOUNCEMENT BAR (Desktop) */}
+      <div className="hidden lg:flex justify-between items-center px-8 py-2.5 bg-[#FAF9F6] border-b border-[#E2E8F0] text-xs font-semibold text-[#475569]">
+        <div className="flex items-center gap-2">
+          <Truck size={14} className="text-[#0F5A31]" />
+          <span>Same Day Delivery in Your District</span>
         </div>
-      </header>
+        <div className="flex items-center gap-2">
+          <Store size={14} className="text-[#0F5A31]" />
+          <span>Support Local Shops, Build Your District</span>
+        </div>
+        <div className="flex items-center gap-2 text-[#E05315]">
+          <Flame size={14} className="text-[#E05315]" fill="currentColor" />
+          <span>First Order? Get Flat 10% OFF</span>
+        </div>
+      </div>
 
-      {/* Mobile Menu Overlay */}
-      <div
-        className={`mobile-overlay ${isMenuOpen ? "open" : ""}`}
-        onClick={() => setIsMenuOpen(false)}
-        style={{
-          position: "fixed",
-          inset: 0,
-          background: "rgba(0, 0, 0, 0.8)",
-          zIndex: 200,
-          opacity: isMenuOpen ? 1 : 0,
-          pointerEvents: isMenuOpen ? "auto" : "none",
-          transition: "opacity 0.3s ease"
-        }}
-      >
-        <div 
-          className="mobile-drawer" 
-          onClick={(e) => e.stopPropagation()}
-          style={{
-            position: "fixed",
-            top: 0,
-            right: 0,
-            bottom: 0,
-            width: "300px",
-            background: "var(--bg-primary)",
-            borderLeft: "2px solid var(--border-default)",
-            padding: "24px",
-            transform: isMenuOpen ? "translateX(0)" : "translateX(100%)",
-            transition: "transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)",
-            overflowY: "auto"
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-            <LinkNext href="/" className="header-logo" onClick={() => setIsMenuOpen(false)} style={{ fontSize: "18px", letterSpacing: "-1px" }}>
-              <span>DISTRICT</span> KART
-            </LinkNext>
-            <button
-              className="mobile-close"
-              onClick={() => setIsMenuOpen(false)}
-              aria-label="Close menu"
+      {/* 2. MAIN HEADER (Desktop & Mobile) */}
+      <header className="sticky top-0 z-50 bg-white border-b border-[#E2E8F0] shadow-sm">
+        <div className="max-w-[1280px] mx-auto px-4 lg:px-6 h-[64px] flex items-center justify-between gap-3">
+          
+          {/* Left Area: Hamburger (All Screens) & Logo */}
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={() => setIsDrawerOpen(true)}
+              className="p-1 text-[#1E293B] hover:bg-[#F1F5F9] rounded-md transition-colors"
+              aria-label="Open navigation drawer"
             >
-              <X size={18} />
+              <Menu size={24} />
             </button>
-          </div>
 
-          {/* Navigation Links */}
-          <nav style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {navLinks.map((link) => (
-              <div key={link.href} style={{ position: 'relative', display: 'block', width: '100%' }}>
-                <LinkNext
-                  href={link.href}
-                  className="mobile-link"
-                  onClick={() => setIsMenuOpen(false)}
-                  style={{ display: 'block', width: '100%' }}
-                >
-                  {link.label}
-                </LinkNext>
-                {link.hasCrown && (
-                  <span className="crown-badge" style={{
-                    position: 'absolute',
-                    top: '50%',
-                    right: '16px',
-                    transform: 'translateY(-50%)',
-                    animation: 'float-crown 2s ease-in-out infinite',
-                    color: 'var(--accent-red)',
-                    display: 'flex',
-                    alignItems: 'center'
-                  }}>
-                    <Crown size={14} fill="var(--accent-red)" stroke="var(--accent-red)" />
-                  </span>
-                )}
+            {/* Logo */}
+            <LinkNext href="/" className="flex items-center gap-1.5 group">
+              <div className="w-8 h-8 md:w-9 md:h-9 bg-[#0F5A31] rounded-lg flex items-center justify-center text-white font-extrabold text-lg md:text-xl shadow-md group-hover:scale-105 transition-transform duration-300">
+                D
               </div>
-            ))}
-          </nav>
-
-          {/* Mobile Actions */}
-          <div style={{ marginTop: 24, display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {session ? (
-              <LinkNext
-                href="/dashboard"
-                className="header-action-item"
-                onClick={() => setIsMenuOpen(false)}
-                style={{ justifyContent: 'center', padding: '12px', border: "2px solid var(--border-default)" }}
-              >
-                {sessionUser?.image ? (
-                  <img src={sessionUser.image} alt={sessionUser.name || "User"} style={{ width: 24, height: 24, border: "2px solid var(--border-default)" }} />
-                ) : (
-                  <div style={{ width: 24, height: 24, background: "var(--accent-red)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 900, color: "var(--accent-cream)", border: "1.5px solid var(--border-default)" }}>
-                    {userInitial}
-                  </div>
-                )}
-                <span style={{ marginLeft: 8 }}>My Account</span>
-              </LinkNext>
-            ) : (
-              <LinkNext
-                href="/auth/login"
-                className="header-action-item"
-                onClick={() => setIsMenuOpen(false)}
-                style={{ justifyContent: 'center', padding: '12px', border: "2px solid var(--border-default)" }}
-              >
-                <User size={16} />
-                <span style={{ marginLeft: 8 }}>Login</span>
-              </LinkNext>
-            )}
-
-            <LinkNext
-              href="/cart"
-              className="header-action-item"
-              onClick={() => setIsMenuOpen(false)}
-              style={{ justifyContent: 'center', padding: '12px', border: "2px solid var(--border-default)" }}
-            >
-              <ShoppingCart size={16} />
-              <span style={{ marginLeft: 8 }}>Cart</span>
+              <div className="flex flex-col">
+                <span className="font-black text-lg md:text-xl tracking-tight text-[#1E293B] leading-none">
+                  DISTRICT<span className="text-[#E05315]">KART</span>
+                </span>
+                <span className="text-[9px] md:text-[10px] font-medium text-[#475569] mt-0.5 tracking-wide leading-none">
+                  Har District Ka Apna Online Bazaar
+                </span>
+              </div>
             </LinkNext>
 
-            <LinkNext
-              href="/vendor/login"
-              className="header-cta"
-              onClick={() => setIsMenuOpen(false)}
-              style={{ textAlign: 'center', display: 'block' }}
-            >
-              Open Shop
-            </LinkNext>
-          </div>
-
-          {/* Location Selector */}
-          <div style={{ marginTop: 32 }}>
-            <label style={{
-              fontFamily: 'var(--font-display)',
-              fontSize: 11,
-              fontWeight: 800,
-              color: 'var(--text-secondary)',
-              marginBottom: 10,
-              display: 'block',
-              textTransform: 'uppercase',
-              letterSpacing: '1px',
-            }}>
-              Location
-            </label>
-            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-              <MapPin size={14} color="var(--accent-red)" style={{ position: 'absolute', left: 14 }} />
-              <select
-                value={loc}
-                onChange={handleLocationChange}
-                style={{
-                  width: '100%',
-                  padding: '12px 12px 12px 38px',
-                  borderRadius: 4,
-                  border: '2px solid var(--border-default)',
-                  background: 'var(--bg-secondary)',
-                  fontSize: 13,
-                  fontFamily: 'var(--font-display)',
-                  color: 'var(--text-primary)',
-                  fontWeight: 700,
-                  textTransform: 'uppercase',
-                  cursor: 'pointer',
-                  outline: 'none',
-                }}
+            {/* Location Selector (Desktop) */}
+            <div className="hidden lg:flex items-center gap-1.5 ml-4 bg-[#F8FAFC] border border-[#E2E8F0] px-2.5 py-1 rounded-full text-xs font-bold text-[#1E293B]">
+              <MapPin size={13} className="text-[#E05315]" />
+              <span>{currentLoc}</span>
+              <select 
+                value={currentLoc}
+                onChange={(e) => handleLocationChange(e.target.value)}
+                className="bg-transparent border-none outline-none cursor-pointer text-xs font-bold text-[#475569] ml-1 pr-1"
               >
-                <option value="all">All Locations</option>
+                <option value="Patna">Patna</option>
                 <option value="Samastipur">Samastipur</option>
                 <option value="Nawabganj">Nawabganj</option>
               </select>
             </div>
           </div>
+
+          {/* Center Search Area (Desktop Only) */}
+          <form onSubmit={handleSearchSubmit} className="hidden lg:flex items-center flex-1 max-w-[500px] relative">
+            <input 
+              type="text"
+              placeholder="Search for products, shops, cakes, restaurants..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-[#FAF9F6] border border-[#E2E8F0] rounded-l-lg py-2 pl-4 pr-12 text-sm text-[#1E293B] outline-none focus:border-[#CBD5E1] focus:bg-white transition-all font-medium h-[38px]"
+            />
+            <button 
+              type="submit"
+              className="bg-[#E05315] hover:bg-[#EA580C] text-white px-5 h-[38px] rounded-r-lg font-bold text-sm tracking-wide transition-colors flex items-center justify-center"
+            >
+              Search
+            </button>
+          </form>
+
+          {/* Right Action Controls (Desktop Only) */}
+          <div className="hidden lg:flex items-center gap-4 text-sm font-bold text-[#475569]">
+            {session ? (
+              <LinkNext href="/dashboard" className="flex items-center gap-1.5 hover:text-[#1E293B] transition-colors">
+                <div className="w-7 h-7 rounded-full bg-[#0F5A31] text-white flex items-center justify-center text-xs font-black">
+                  {userName.charAt(0).toUpperCase()}
+                </div>
+                <span>{userName}</span>
+              </LinkNext>
+            ) : (
+              <LinkNext href="/auth/login" className="flex flex-col items-center gap-0.5 hover:text-[#1E293B] transition-colors text-center">
+                <User size={18} className="text-[#1E293B]" />
+                <span className="text-[11px] font-semibold">Login / Register</span>
+              </LinkNext>
+            )}
+
+            <LinkNext href="/dashboard" className="flex flex-col items-center gap-0.5 hover:text-[#1E293B] transition-colors text-center">
+              <ShoppingBag size={18} className="text-[#1E293B]" />
+              <span className="text-[11px] font-semibold">Orders</span>
+            </LinkNext>
+
+            <LinkNext href="/dashboard" className="flex flex-col items-center gap-0.5 hover:text-[#1E293B] transition-colors text-center">
+              <Heart size={18} className="text-[#1E293B]" />
+              <span className="text-[11px] font-semibold">Wishlist</span>
+            </LinkNext>
+
+            <LinkNext href="/cart" className="flex flex-col items-center gap-0.5 hover:text-[#1E293B] transition-colors text-center relative">
+              <div className="relative">
+                <ShoppingCart size={18} className="text-[#1E293B]" />
+                <span className="absolute -top-1.5 -right-2 bg-[#E05315] text-white rounded-full w-4 h-4 flex items-center justify-center text-[9px] font-black leading-none">
+                  2
+                </span>
+              </div>
+              <span className="text-[11px] font-semibold">Cart</span>
+            </LinkNext>
+          </div>
+
+          {/* Mobile Right Controls */}
+          <div className="lg:hidden flex items-center gap-3">
+            <button className="p-1 text-[#1E293B] relative" aria-label="Notifications">
+              <Bell size={22} />
+              <span className="absolute top-0 right-0 bg-[#E05315] text-white rounded-full w-3.5 h-3.5 flex items-center justify-center text-[8px] font-black leading-none">
+                3
+              </span>
+            </button>
+
+            <LinkNext href="/cart" className="p-1 text-[#1E293B] relative" aria-label="Cart">
+              <ShoppingCart size={22} />
+              <span className="absolute top-0 right-0 bg-[#E05315] text-white rounded-full w-3.5 h-3.5 flex items-center justify-center text-[8px] font-black leading-none">
+                2
+              </span>
+            </LinkNext>
+          </div>
+
         </div>
+
+        {/* 3. SUB-NAVBAR CATEGORIES (Desktop Only) */}
+        <div className="hidden lg:block border-t border-[#E2E8F0] bg-white">
+          <div className="max-w-[1280px] mx-auto px-8 h-[48px] flex items-center gap-6">
+            
+            {/* All Categories Button */}
+            <button className="bg-[#E05315] hover:bg-[#EA580C] text-white px-5 h-[48px] font-bold text-sm tracking-wide transition-colors flex items-center gap-2">
+              <Menu size={16} />
+              <span>All Categories</span>
+            </button>
+
+            {/* Quick Links */}
+            <nav className="flex items-center gap-6 text-sm font-semibold text-[#475569]">
+              {categories.map((cat) => (
+                <LinkNext 
+                  key={cat.name} 
+                  href={cat.href} 
+                  className="hover:text-[#1E293B] hover:underline underline-offset-4 decoration-2 decoration-[#0F5A31] transition-colors py-2"
+                >
+                  {cat.name}
+                </LinkNext>
+              ))}
+              <div className="flex items-center gap-1 cursor-pointer hover:text-[#1E293B] transition-colors py-2">
+                <span>More</span>
+                <ChevronDown size={14} />
+              </div>
+            </nav>
+
+          </div>
+        </div>
+
+        {/* 4. MOBILE SUB-ROW: Location & Search (Image 2) */}
+        <div className="lg:hidden border-t border-[#E2E8F0] px-4 py-2.5 bg-white flex flex-col gap-2.5">
+          {/* Mobile Location Selector */}
+          <div className="flex items-center gap-1.5 text-xs font-bold text-[#1E293B]">
+            <MapPin size={14} className="text-[#E05315]" />
+            <span>Patna, Bihar</span>
+            <ChevronDown size={12} className="text-[#475569]" />
+          </div>
+
+          {/* Mobile Search Bar */}
+          <form onSubmit={handleSearchSubmit} className="flex items-center bg-[#FAF9F6] border border-[#E2E8F0] rounded-lg px-3 py-2.5 relative">
+            <Search size={18} className="text-[#94A3B8] mr-2" />
+            <input 
+              type="text"
+              placeholder="Search for products, shops, cakes, restaurants..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="flex-1 bg-transparent border-none outline-none text-xs text-[#1E293B] placeholder-[#94A3B8] font-medium"
+            />
+            <Mic size={18} className="text-[#475569] ml-2 cursor-pointer" />
+          </form>
+        </div>
+
+      </header>
+
+      {/* 5. SIDE DRAWER NAVIGATION PANEL (Image 5) */}
+      <div className={`slide-drawer-overlay ${isDrawerOpen ? "open" : ""}`} onClick={() => setIsDrawerOpen(false)}>
+        <div className="slide-drawer-panel" onClick={(e) => e.stopPropagation()}>
+          
+          {/* Header */}
+          <div className="slide-drawer-header">
+            <div className="flex justify-between items-start">
+              <div className="slide-drawer-avatar-row">
+                <div className="slide-drawer-avatar">
+                  <User size={32} className="text-white opacity-90" />
+                </div>
+                <div>
+                  <h3 className="slide-drawer-name">Hello, {userName}</h3>
+                  <div className="slide-drawer-location">
+                    <MapPin size={13} className="text-[#E05315]" />
+                    <span>Patna, Bihar</span>
+                  </div>
+                </div>
+              </div>
+              <button 
+                onClick={() => setIsDrawerOpen(false)}
+                className="text-white/80 hover:text-white p-1 hover:bg-white/10 rounded-full transition-colors"
+                aria-label="Close menu"
+              >
+                <X size={20} />
+              </button>
+            </div>
+          </div>
+
+          {/* Drawer Menu Items */}
+          <div className="slide-drawer-menu">
+            <LinkNext href="/" onClick={() => setIsDrawerOpen(false)} className="slide-drawer-item">
+              <Home size={18} className="text-[#0F5A31]" />
+              <span>Home</span>
+            </LinkNext>
+
+            <LinkNext href="/shop" onClick={() => setIsDrawerOpen(false)} className="slide-drawer-item">
+              <ShoppingBag size={18} className="text-[#E05315]" />
+              <span>Local Shops</span>
+            </LinkNext>
+
+            <LinkNext href="/#categories" onClick={() => setIsDrawerOpen(false)} className="slide-drawer-item">
+              <Folder size={18} className="text-[#0F5A31]" />
+              <span>Categories</span>
+            </LinkNext>
+
+            <LinkNext href="/dashboard" onClick={() => setIsDrawerOpen(false)} className="slide-drawer-item">
+              <ShoppingBag size={18} className="text-[#0F5A31]" />
+              <span>My Orders</span>
+            </LinkNext>
+
+            <LinkNext href="/dashboard" onClick={() => setIsDrawerOpen(false)} className="slide-drawer-item">
+              <Heart size={18} className="text-red-500" />
+              <span>Wishlist</span>
+            </LinkNext>
+
+            <LinkNext href="/dashboard" onClick={() => setIsDrawerOpen(false)} className="slide-drawer-item">
+              <Tag size={18} className="text-[#0F5A31]" />
+              <span>Offers</span>
+            </LinkNext>
+
+            <LinkNext href="/dashboard" onClick={() => setIsDrawerOpen(false)} className="slide-drawer-item">
+              <Gift size={18} className="text-[#0F5A31]" />
+              <span>Refer & Earn</span>
+            </LinkNext>
+
+            <div className="slide-drawer-divider" />
+
+            <div className="slide-drawer-item" onClick={() => { setIsDrawerOpen(false); router.push("/?loc=Patna"); }}>
+              <MapPin size={18} className="text-[#0F5A31]" />
+              <span>Change District</span>
+            </div>
+
+            <LinkNext href="/vendor/login" onClick={() => setIsDrawerOpen(false)} className="slide-drawer-item">
+              <div className="w-[18px] h-[18px] bg-[#0F5A31] rounded-sm flex items-center justify-center text-[7px] text-white font-extrabold">V</div>
+              <span>Become a Seller</span>
+            </LinkNext>
+
+            <div className="slide-drawer-divider" />
+
+            <a href="tel:+919142717690" className="slide-drawer-item">
+              <PhoneCall size={18} className="text-[#0F5A31]" />
+              <span>Support</span>
+            </a>
+
+            <LinkNext href="/#help" onClick={() => setIsDrawerOpen(false)} className="slide-drawer-item">
+              <HelpCircle size={18} className="text-[#0F5A31]" />
+              <span>Help Center</span>
+            </LinkNext>
+
+            <div className="slide-drawer-divider" />
+
+            {session ? (
+              <button 
+                onClick={() => { signOut(); setIsDrawerOpen(false); }}
+                className="slide-drawer-item text-red-500 hover:bg-red-50"
+                style={{ width: "100%", textAlign: "left" }}
+              >
+                <LogOut size={18} className="text-red-500" />
+                <span>Logout</span>
+              </button>
+            ) : (
+              <LinkNext href="/auth/login" onClick={() => setIsDrawerOpen(false)} className="slide-drawer-item">
+                <User size={18} className="text-[#0F5A31]" />
+                <span>Login</span>
+              </LinkNext>
+            )}
+
+          </div>
+        </div>
+      </div>
+
+      {/* 6. MOBILE BOTTOM NAVIGATION BAR (Image 2) */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-[#E2E8F0] shadow-lg flex items-center justify-around h-[60px] px-2 text-[10px] font-bold text-[#475569]">
+        <LinkNext href="/" className="flex flex-col items-center gap-0.5 text-[#0F5A31]">
+          <Home size={20} fill="#0F5A31" className="text-[#0F5A31]" />
+          <span>Home</span>
+        </LinkNext>
+
+        <LinkNext href="/#categories" className="flex flex-col items-center gap-0.5 hover:text-[#0F5A31] transition-colors">
+          <Folder size={20} />
+          <span>Categories</span>
+        </LinkNext>
+
+        <LinkNext href="/shop" className="flex flex-col items-center gap-0.5 hover:text-[#0F5A31] transition-colors">
+          <ShoppingBag size={20} />
+          <span>Shops</span>
+        </LinkNext>
+
+        <LinkNext href="/dashboard" className="flex flex-col items-center gap-0.5 hover:text-[#0F5A31] transition-colors">
+          <ShoppingCart size={20} />
+          <span>Orders</span>
+        </LinkNext>
+
+        <LinkNext href="/dashboard" className="flex flex-col items-center gap-0.5 hover:text-[#0F5A31] transition-colors">
+          <User size={20} />
+          <span>Profile</span>
+        </LinkNext>
       </div>
     </>
   );

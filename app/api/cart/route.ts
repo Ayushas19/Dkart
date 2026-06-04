@@ -16,6 +16,18 @@ export async function POST(req: Request) {
     const { productId, quantity = 1 } = await req.json();
     if (!productId) return NextResponse.json({ error: "Product ID is required" }, { status: 400 });
 
+    // Verify user exists in DB (avoids foreign key P2003 constraint issues after re-seeding)
+    const dbUser = await prisma.user.findUnique({ where: { id: user.id } });
+    if (!dbUser) {
+      return NextResponse.json({ error: "User not found. Please log in again." }, { status: 401 });
+    }
+
+    // Verify product exists in DB
+    const dbProduct = await prisma.product.findUnique({ where: { id: productId } });
+    if (!dbProduct) {
+      return NextResponse.json({ error: "Product not found" }, { status: 404 });
+    }
+
     const existing = await prisma.cartItem.findUnique({
       where: { userId_productId: { userId: user.id, productId } },
     });
