@@ -99,7 +99,7 @@ export const authOptions: AuthOptions = {
   callbacks: {
     // ── jwt: enrich token on first sign-in and subsequent validations ──
     async jwt({ token, user }) {
-      const userId = token.id || user?.id;
+      const userId = (token.id as string) || (user?.id as string);
       if (userId) {
         // Fetch full user from DB so we always get the latest custom fields (role, shop)
         // dynamically on every token validation, rather than only on first sign-in.
